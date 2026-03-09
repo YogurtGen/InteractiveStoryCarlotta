@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Di Antara Halaman dan Hati</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060308;--gold:#c9a055;--gold2:#e8c87a;
+  --cream:#f4e8d1;--cream2:#b8aa96;
+  --red:#8b1a2a;--cry:#b8d4e8;--cry2:#dceeff;
+}
+*{ margin:0;padding:0;box-sizing:border-box;
+   -webkit-tap-highlight-color:transparent;-webkit-touch-callout:none; }
+html,body{ width:100%;height:100%;background:var(--bg);
+  font-family:'Cormorant Garamond',serif;user-select:none;overflow:hidden; }
+
+/* ═══ SCENE SYSTEM ═══ */
+.scene{
+  position:fixed;inset:0;display:none;opacity:0;
+  transition:opacity .9s ease;
+  flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.scene.active{ display:flex; }
+.scene.visible{ opacity:1; }
+
+/* Epilogue scrollable on desktop */
+#s12{ justify-content:flex-start;overflow-y:auto;overflow-x:hidden;padding:40px 0 80px; }
+
+/* ═══ MOBILE ═══ */
+@media(max-width:700px){
+  .scene{
+    justify-content:flex-start;overflow-y:auto;
+    overflow-x:hidden;-webkit-overflow-scrolling:touch;
+    padding:48px 0 130px;
+  }
+  #s0{ justify-content:center;padding:0; }
+  #s12{ padding:40px 0 110px; }
+
+  /* bg layers stay fixed to viewport */
+  .scbg{
+    position:fixed!important;inset:0!important;
+    width:100%!important;height:100%!important;pointer-events:none!important;
+  }
+  .sc{ width:94%;overflow:visible; }
+
+  /* character image */
+  #charWrap img{ width:clamp(155px,62vw,230px);height:auto; }
+
+  /* dialogue */
+  .bbl{ max-width:calc(100vw - 128px)!important;font-size:.95rem!important; }
+  .dlg{ gap:.5rem; }
+  .av{ width:36px!important;height:36px!important;flex-shrink:0; }
+  .av img,.av svg{ width:100%!important;height:100%!important; }
+
+  /* text */
+  .st{ font-size:1rem;line-height:1.85; }
+  .cname{ font-size:clamp(1.6rem,7.5vw,2.4rem); }
+  .tp{ padding:1.35rem 1.15rem; }
+  .quot{ padding:.7rem .9rem; }
+  #s7 .sc{ margin-top:0!important; }
+
+  /* HINT: pushed well above the next button, no overlap with content */
+  #hint{ bottom:72px;font-size:.62rem;letter-spacing:.2em; }
+  #nextBtn{ bottom:16px;right:14px;width:44px;height:44px; }
+}
+
+/* ═══ FIXED UI ═══ */
+#prog{ position:fixed;top:0;left:0;height:2px;
+  background:linear-gradient(90deg,var(--red),var(--gold),var(--cry));
+  transition:width .6s ease;z-index:50; }
+
+#nextBtn{
+  position:fixed;bottom:26px;right:26px;width:48px;height:48px;border-radius:50%;
+  border:1px solid rgba(201,160,85,.35);background:rgba(6,3,8,.8);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:50;transition:all .3s;backdrop-filter:blur(4px);
+}
+#nextBtn:hover{ border-color:var(--gold);box-shadow:0 0 18px rgba(201,160,85,.25); }
+#nextBtn svg{ stroke:var(--gold);width:18px;height:18px; }
+
+/* HINT — desktop: 88px above bottom so it never clashes with content */
+#hint{
+  position:fixed;bottom:88px;left:50%;transform:translateX(-50%);
+  font-size:.72rem;letter-spacing:.25em;color:var(--gold);
+  opacity:.5;z-index:50;text-transform:uppercase;
+  font-family:'Cormorant Garamond',serif;
+  animation:blink 2.5s infinite;pointer-events:none;white-space:nowrap;
+}
+@keyframes blink{0%,100%{opacity:.2;}50%{opacity:.65;}}
+
+/* ═══ CONTENT ═══ */
+.sc{ max-width:680px;width:92%;z-index:20;position:relative; }
+.tp{
+  background:linear-gradient(135deg,rgba(10,4,12,.93),rgba(18,7,14,.90));
+  border:1px solid rgba(201,160,85,.22);
+  padding:2rem 2.5rem;position:relative;
+  box-shadow:0 0 70px rgba(0,0,0,.85),inset 0 0 40px rgba(201,160,85,.02);
+}
+.tp::before,.tp::after{ content:'';position:absolute;width:18px;height:18px;
+  border-style:solid;border-color:var(--gold);opacity:.35; }
+.tp::before{ top:7px;left:7px;border-width:1px 0 0 1px; }
+.tp::after{ bottom:7px;right:7px;border-width:0 1px 1px 0; }
+
+.lbl{ font-size:.68rem;letter-spacing:.38em;color:var(--gold);
+  text-transform:uppercase;margin-bottom:.9rem;opacity:.65; }
+.st{ font-family:'Cormorant Garamond',serif;font-size:1.12rem;
+  line-height:1.95;color:var(--cream);font-weight:300; }
+.st em{ font-style:italic;color:var(--gold2); }
+.st strong{ font-weight:600;color:#fff; }
+.cname{ font-family:'Playfair Display',serif;font-size:clamp(2.2rem,6vw,3.8rem);
+  font-style:italic;color:var(--cry2);text-align:center;letter-spacing:.15em;
+  text-shadow:0 0 40px rgba(184,212,232,.5),0 0 80px rgba(184,212,232,.2);margin-bottom:.8rem; }
+
+/* ═══ DIALOGUE ═══ */
+.dlg{ display:flex;align-items:flex-end;gap:.9rem;
+  opacity:0;transform:translateY(16px);transition:opacity .5s,transform .5s; }
+.dlg.show{ opacity:1;transform:translateY(0); }
+.dlg.C{ flex-direction:row-reverse; }
+.av{ width:46px;height:46px;border-radius:50%;flex-shrink:0;border:2px solid;
+  display:flex;align-items:center;justify-content:center;overflow:hidden; }
+.av-p{ border-color:var(--gold);background:linear-gradient(135deg,#3a1a08,#5c2810); }
+.av-c{ border-color:var(--cry);background:linear-gradient(135deg,#121e2e,#1e3045);
+  box-shadow:0 0 12px rgba(184,212,232,.25); }
+.av img{ width:100%;height:100%;object-fit:cover;border-radius:50%; }
+.bbl{ max-width:400px;padding:.85rem 1.2rem;
+  font-family:'Cormorant Garamond',serif;font-size:1.08rem;line-height:1.72; }
+.bbl-p{ background:linear-gradient(135deg,rgba(38,18,6,.95),rgba(28,10,4,.95));
+  border:1px solid rgba(201,160,85,.28);color:var(--cream); }
+.bbl-c{ background:linear-gradient(135deg,rgba(12,22,38,.95),rgba(8,16,30,.95));
+  border:1px solid rgba(184,212,232,.28);color:var(--cry2);
+  box-shadow:0 0 20px rgba(184,212,232,.04); }
+.bbl em{ font-style:italic; }
+.dname{ font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:.35rem;opacity:.55; }
+
+/* ═══ QUOTE ═══ */
+.quot{ background:linear-gradient(135deg,rgba(139,26,42,.08),rgba(201,160,85,.04));
+  border-left:2px solid var(--red);padding:.9rem 1.4rem;margin:.9rem 0;
+  font-family:'IM Fell English',serif;font-style:italic;color:var(--gold2);
+  font-size:1.05rem;line-height:1.85; }
+.quot-c{ border-color:var(--cry);background:rgba(184,212,232,.04); }
+
+/* ═══ BOOK 3D ═══ */
+.bv{ perspective:600px;display:flex;justify-content:center;margin:1.2rem 0; }
+.b3{ width:110px;height:160px;position:relative;transform-style:preserve-3d;
+  transform:rotateY(-22deg) rotateX(6deg);animation:bkFloat 4s ease-in-out infinite; }
+@keyframes bkFloat{
+  0%,100%{ transform:rotateY(-22deg) rotateX(6deg) translateY(0); }
+  50%{ transform:rotateY(-22deg) rotateX(6deg) translateY(-10px); }
+}
+.bc{ width:110px;height:160px;background:linear-gradient(150deg,#1a0a0f,#2d1020);
+  border:1px solid rgba(201,160,85,.3);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:.8rem;text-align:center; }
+.bt{ font-family:'IM Fell English',serif;font-size:.72rem;color:var(--gold);
+  font-style:italic;line-height:1.5; }
+
+/* ═══ PARTICLES ═══ */
+.dust{ position:absolute;border-radius:50%;background:rgba(201,160,85,.35);
+  animation:dustUp linear infinite;pointer-events:none; }
+@keyframes dustUp{
+  0%{ transform:translateY(0);opacity:0; }10%{ opacity:.8; }90%{ opacity:.4; }
+  100%{ transform:translateY(-220px) translateX(25px);opacity:0; }
+}
+.ray{ position:absolute;
+  background:linear-gradient(180deg,rgba(255,210,130,0),rgba(255,210,130,.12),rgba(255,210,130,0));
+  transform-origin:top center;animation:rayP 4s ease-in-out infinite;pointer-events:none; }
+@keyframes rayP{ 0%,100%{ opacity:.2; }50%{ opacity:.65; } }
+.sp{ position:absolute;
+  clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+  background:var(--cry2);animation:spA ease-in-out infinite;pointer-events:none; }
+@keyframes spA{ 0%,100%{ opacity:0;transform:scale(0) rotate(0deg); }50%{ opacity:1;transform:scale(1) rotate(180deg); } }
+
+/* FIX #3: leaves with negative delay = already mid-fall, fill-mode=backwards = hidden during delay */
+.lf{ position:absolute;pointer-events:none;
+  animation:lfFall linear infinite;animation-fill-mode:backwards; }
+@keyframes lfFall{
+  0%{ transform:translateY(-30px) rotate(0deg);opacity:0; }
+  6%{ opacity:.85; }92%{ opacity:.5; }
+  100%{ transform:translateY(110vh) rotate(900deg) translateX(55px);opacity:0; }
+}
+
+.sunrise{ position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 110%,#e06000,#a02820 20%,#45081a 50%,#0c0308);
+  animation:srReveal 3.5s ease forwards; }
+@keyframes srReveal{ 0%{ opacity:0;transform:scale(1.05); }100%{ opacity:1;transform:scale(1); } }
+
+.tear{ position:absolute;width:3px;height:9px;
+  background:linear-gradient(180deg,var(--cry2),rgba(184,212,232,.2));
+  border-radius:0 0 50% 50%;animation:tearF ease-in infinite; }
+@keyframes tearF{ 0%{ transform:translateY(0);opacity:1; }100%{ transform:translateY(70px);opacity:0; } }
+
+.pst{ position:absolute;border:1px solid rgba(244,232,209,.18);
+  background:rgba(244,232,209,.025);animation:pstA linear infinite;pointer-events:none; }
+@keyframes pstA{
+  0%{ transform:translate(-60vw,50vh) rotate(-200deg);opacity:0; }
+  15%{ opacity:.55; }85%{ opacity:.35; }
+  100%{ transform:translate(60vw,-60vh) rotate(200deg);opacity:0; }
+}
+.fp{ position:absolute;border:1px solid rgba(244,232,209,.12);
+  background:rgba(244,232,209,.02);animation:fpA ease-in-out infinite;pointer-events:none; }
+@keyframes fpA{
+  0%{ transform:translate(0,0) rotate(0deg); }25%{ transform:translate(14px,-18px) rotate(4deg); }
+  50%{ transform:translate(-8px,-30px) rotate(-3deg); }75%{ transform:translate(18px,-20px) rotate(6deg); }
+  100%{ transform:translate(0,0) rotate(0deg); }
+}
+@keyframes shake{
+  0%,100%{ transform:translate(0,0); }10%{ transform:translate(-6px,3px); }
+  20%{ transform:translate(6px,-3px); }30%{ transform:translate(-4px,4px); }
+  40%{ transform:translate(5px,-2px); }50%{ transform:translate(-3px,2px); }60%{ transform:translate(3px,0); }
+}
+.shk{ animation:shake .55s ease; }
+.candg{ position:absolute;inset:-30px;
+  background:radial-gradient(ellipse at 50% 90%,rgba(255,140,30,.06),transparent 65%);
+  animation:cgF 3.2s ease-in-out infinite;pointer-events:none; }
+@keyframes cgF{ 0%,100%{ opacity:.5;transform:scale(1); }40%{ opacity:1;transform:scale(1.06); }70%{ opacity:.6;transform:scale(.97); } }
+.rflash{ position:fixed;inset:0;
+  background:radial-gradient(ellipse at 82% 50%,rgba(139,26,42,.35),transparent 58%);
+  animation:rflA 6s ease-in-out infinite;pointer-events:none;z-index:8; }
+@keyframes rflA{ 0%,75%,100%{ opacity:0; }80%,92%{ opacity:1; } }
+.cdot{ position:absolute;border-radius:50%;animation:spA ease-in-out infinite;pointer-events:none; }
+.fwGlow{ font-family:'Playfair Display',serif;font-style:italic;color:var(--cry2);
+  text-align:center;text-shadow:0 0 30px rgba(184,212,232,.6);
+  animation:fwP 3.5s ease-in-out infinite; }
+@keyframes fwP{ 0%,100%{ opacity:.4;text-shadow:0 0 20px rgba(184,212,232,.25); }50%{ opacity:1;text-shadow:0 0 60px rgba(184,212,232,.8); } }
+@keyframes dressFlit{
+  0%,65%,100%{ opacity:0;transform:translateX(22px); }72%,88%{ opacity:.75;transform:translateX(0); }
+}
+.dress-flit{ animation:dressFlit 5.5s ease-in-out infinite; }
+
+/* ═══ COVER ═══ */
+#s0{ background:radial-gradient(ellipse at 50% 45%,#1c0a14,#060308 70%); }
+.ctitle{ font-family:'Playfair Display',serif;font-size:clamp(2.2rem,5.5vw,4rem);
+  font-style:italic;color:var(--cream);text-shadow:0 0 50px rgba(201,160,85,.35);
+  margin-bottom:.8rem;opacity:0;animation:fadeIn 1.8s ease 1s forwards; }
+.csubt{ font-size:.75rem;letter-spacing:.5em;color:var(--gold);text-transform:uppercase;
+  opacity:0;animation:fadeIn 1.5s ease 2s forwards; }
+.cdiv{ width:100px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  margin:1.4rem auto;opacity:0;animation:fadeIn 1.2s ease 2.4s forwards; }
+.cbegin{ font-family:'IM Fell English',serif;font-size:.9rem;color:var(--cream2);
+  letter-spacing:.18em;cursor:pointer;opacity:0;animation:fadeIn 1.2s ease 3.2s forwards;
+  margin-top:1.8rem;transition:color .3s,text-shadow .3s;padding:.5rem 1.2rem;
+  border:1px solid rgba(201,160,85,.2);outline:none;background:transparent;display:inline-block; }
+.cbegin:hover,.cbegin:focus{ color:var(--gold2);text-shadow:0 0 18px rgba(232,200,122,.45);
+  border-color:rgba(201,160,85,.5); }
+@keyframes fadeIn{ to{ opacity:1; } }
+
+/* ═══ MISC ═══ */
+.slbl{ font-family:'Cormorant Garamond',serif;font-size:.68rem;
+  letter-spacing:.4em;text-transform:uppercase;margin-bottom:.9rem;opacity:.6; }
+.crysvg{ display:flex;justify-content:center;margin:.8rem 0; }
+.ept{ font-family:'IM Fell English',serif;font-style:italic;
+  font-size:1.08rem;color:var(--cream2);line-height:2.1;text-align:center; }
+
+/* ═══ CHARACTER ═══ */
+#charWrap{ display:flex;justify-content:center;margin-bottom:.8rem; }
+#charWrap img{ width:210px;height:auto;
+  filter:drop-shadow(0 0 22px rgba(184,212,232,.4));display:block; }
+</style>
+</head>
+<body>
+
+<div id="prog" style="width:0%"></div>
+<div id="nextBtn" onclick="advance()">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9 18 15 12 9 6"/>
+  </svg>
+</div>
+<div id="hint">klik untuk melanjutkan</div>
+
+<!-- ══ SCENE 0: COVER ══ -->
+<div class="scene" id="s0">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 68%,#2a0d09 0%,#0e0305 45%,#030106 100%);z-index:0;pointer-events:none;"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:30%;background:linear-gradient(0deg,#180704,transparent);z-index:1;pointer-events:none;"></div>
+  <canvas id="coverFx" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
+  <div style="position:relative;z-index:20;text-align:center;padding:1rem;">
+    <div style="font-size:.65rem;letter-spacing:.55em;color:var(--gold);opacity:0;animation:fadeIn 1s ease .4s forwards;text-transform:uppercase;margin-bottom:1.8rem;">Sebuah Kisah Cinta &amp; Misteri</div>
+    <h1 class="ctitle">Di Antara Halaman<br>dan Hati</h1>
+    <div class="cdiv"></div>
+    <p class="csubt">Cerita Interaktif</p>
+    <div style="margin:1.8rem 0;font-size:1.2rem;color:var(--gold);opacity:0;animation:fadeIn 1s ease 2.8s forwards;">✦ &nbsp; ✦ &nbsp; ✦</div>
+    <div class="cbegin" onclick="advance()">— Mulai Membaca —</div>
+  </div>
+</div>
+
+<!-- ══ SCENE 1: LIBRARY ══ -->
+<div class="scene" id="s1" style="background:radial-gradient(ellipse at 30% 20%,rgba(55,25,8,.8),transparent 55%),radial-gradient(ellipse at 75% 80%,rgba(35,8,14,.9),transparent 50%),linear-gradient(180deg,#0d0507,#190a0e 50%,#0d0507);">
+  <div id="dust1" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+  <div class="scbg" style="position:absolute;bottom:5%;left:15%;width:80px;height:80px;background:radial-gradient(circle,rgba(255,140,30,.18),transparent 70%);animation:cgF 3s ease-in-out infinite;pointer-events:none;"></div>
+  <div class="scbg" style="position:absolute;bottom:5%;right:20%;width:60px;height:60px;background:radial-gradient(circle,rgba(255,140,30,.12),transparent 70%);animation:cgF 4s ease-in-out 1s infinite;pointer-events:none;"></div>
+  <div class="sc" style="z-index:20;">
+    <div class="tp">
+      <div class="candg"></div>
+      <div class="lbl slbl">✦ Perpustakaan Tua · Sore Hari</div>
+      <p class="st">Aku menyandarkan diri di sudut perpustakaan tua itu, buku-buku usang berdebu menjadi temanku sejak pagi. Udara lembap dan aroma kertas lapuk sudah begitu akrab—<br><br>Tapi hari ini,&nbsp;<em>segalanya berubah.</em><br><br>Suara langkah halus menggema di antara rak kayu yang tinggi.<br>Aku menoleh—dan napasku <em>tercekat.</em></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 2: CARLOTTA APPEARS ══ -->
+<div class="scene" id="s2" style="background:radial-gradient(ellipse at 50% 0%,#28101e,#060308 75%);">
+  <div id="rays2" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+  <div id="sps2" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+  <div class="sc" style="z-index:20;text-align:center;">
+    <div class="cname" style="opacity:0;animation:fadeIn 1.5s ease .6s forwards;">Carlotta.</div>
+    <!-- FIX #9: mascot.png — fallback to SVG if file missing -->
+    <div id="charWrap">
+      <img src="mascot.png" alt="Carlotta"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <svg style="display:none;filter:drop-shadow(0 0 22px rgba(184,212,232,.4))"
+           width="210" height="330" viewBox="0 0 210 330" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="faceG" cx="50%" cy="40%" r="55%"><stop offset="0%" stop-color="#f5ede4"/><stop offset="100%" stop-color="#e0d0c4"/></radialGradient>
+          <radialGradient id="hairG" cx="50%" cy="30%" r="60%"><stop offset="0%" stop-color="#e8f2fa"/><stop offset="100%" stop-color="#c4daea"/></radialGradient>
+          <linearGradient id="dressG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7a1422"/><stop offset="100%" stop-color="#4a0c16"/></linearGradient>
+          <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <linearGradient id="glassL" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,200,110,.35)"/><stop offset="100%" stop-color="rgba(255,200,110,0)"/></linearGradient>
+        </defs>
+        <ellipse cx="105" cy="0" rx="90" ry="180" fill="url(#glassL)" opacity=".35"/>
+        <ellipse cx="105" cy="68" rx="46" ry="50" fill="url(#hairG)"/>
+        <path d="M59,85 Q30,130 34,175 Q38,195 52,200" stroke="#d8eaf5" stroke-width="10" fill="none" opacity=".8" stroke-linecap="round"/>
+        <path d="M151,85 Q178,130 174,175 Q170,195 158,200" stroke="#d8eaf5" stroke-width="10" fill="none" opacity=".8" stroke-linecap="round"/>
+        <ellipse cx="105" cy="78" rx="33" ry="38" fill="url(#faceG)"/>
+        <ellipse cx="91" cy="72" rx="7" ry="5.5" fill="#6a7a8e"/><ellipse cx="119" cy="72" rx="7" ry="5.5" fill="#6a7a8e"/>
+        <ellipse cx="91" cy="72" rx="4" ry="3.5" fill="#2e3e50"/><ellipse cx="119" cy="72" rx="4" ry="3.5" fill="#2e3e50"/>
+        <circle cx="93" cy="71" r="1.2" fill="white"/><circle cx="121" cy="71" r="1.2" fill="white"/>
+        <path d="M84,64 Q91,61 98,63" stroke="#8a9aaa" stroke-width="1.2" fill="none"/>
+        <path d="M112,63 Q119,61 126,64" stroke="#8a9aaa" stroke-width="1.2" fill="none"/>
+        <path d="M95,90 Q105,97 115,90" stroke="#b87880" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <rect x="93" y="112" width="24" height="26" rx="4" fill="#f0e8e0"/>
+        <path d="M78,128 Q105,135 132,128" stroke="#b8d4e8" stroke-width="1.2" fill="none" opacity=".7"/>
+        <polygon points="105,128 111,136 105,144 99,136" fill="rgba(184,212,232,.2)" stroke="#b8d4e8" stroke-width="1"/>
+        <circle cx="105" cy="136" r="2.5" fill="#b8d4e8" opacity=".6"><animate attributeName="opacity" values=".3;.9;.3" dur="2s" repeatCount="indefinite"/></circle>
+        <path d="M72,138 Q65,175 55,240 Q80,250 105,245 Q130,250 155,240 Q145,175 138,138 Z" fill="url(#dressG)"/>
+        <path d="M72,138 Q84,148 105,143 Q126,148 138,138 Q122,130 105,132 Q88,130 72,138 Z" fill="#5a0e1a"/>
+        <path d="M90,160 Q105,172 120,160" stroke="rgba(192,60,80,.3)" stroke-width=".8" fill="none"/>
+        <ellipse cx="67" cy="185" rx="11" ry="9" fill="#f0e8e0" transform="rotate(-15,67,185)"/>
+        <rect x="42" y="170" width="36" height="48" rx="2" fill="#221008" stroke="#c9a055" stroke-width=".8"/>
+        <rect x="43" y="170" width="8" height="48" fill="#341510" rx="1"/>
+        <g filter="url(#glow)"><polygon points="105,22 107,30 115,30 109,35 111,43 105,38 99,43 101,35 95,30 103,30" fill="#e8f5ff" opacity=".9"><animateTransform attributeName="transform" type="rotate" from="0 105 32" to="360 105 32" dur="9s" repeatCount="indefinite"/><animate attributeName="opacity" values=".6;1;.6" dur="2.5s" repeatCount="indefinite"/></polygon></g>
+      </svg>
+    </div>
+    <!-- sparkles relative to char -->
+    <div style="position:relative;height:0;overflow:visible;">
+      <div class="sp" style="position:absolute;top:-310px;left:calc(50% + 72px);width:7px;height:7px;animation-delay:0s;animation-duration:2.2s;"></div>
+      <div class="sp" style="position:absolute;top:-275px;left:calc(50% - 92px);width:5px;height:5px;animation-delay:.6s;animation-duration:1.8s;"></div>
+      <div class="sp" style="position:absolute;top:-325px;left:calc(50% - 22px);width:6px;height:6px;animation-delay:1.2s;animation-duration:2.5s;"></div>
+    </div>
+    <div class="tp" style="text-align:left;margin-top:.7rem;">
+      <p class="st">Dia berdiri di bawah jendela kaca patri yang memantulkan cahaya senja, rambut putihnya seperti kristal yang disinari matahari terbenam. Matanya—<em>abu-abu seperti kabut yang menyelimuti danau di pagi hari</em>—menatap langsung ke arahku, dingin namun memikat.<br><br>Gaun merahnya kontras dengan nuansa cokelat dan emas tua perpustakaan. Seakan dialah <em>satu-satunya warna di dunia yang memudar ini.</em></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 3: DIALOGUE 1 ══ -->
+<div class="scene" id="s3" style="background:radial-gradient(ellipse at 30% 20%,rgba(55,25,8,.8),transparent 55%),linear-gradient(180deg,#0d0507,#190a0e 50%,#0d0507);">
+  <div id="dust3" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+  <div class="sc" style="z-index:20;">
+    <div class="lbl slbl" style="text-align:center;margin-bottom:1.3rem;">✦ Percakapan Pertama</div>
+    <div style="display:flex;flex-direction:column;gap:1.1rem;">
+      <div class="dlg C" id="d3a">
+        <!-- FIX #10: profil.png for Carlotta avatar -->
+        <div class="av av-c"><img src="profil.png" alt="C" onerror="this.outerHTML='&lt;svg width=&quot;30&quot; height=&quot;30&quot; viewBox=&quot;0 0 30 30&quot;&gt;&lt;circle cx=&quot;15&quot; cy=&quot;12&quot; r=&quot;7&quot; fill=&quot;#c8dde8&quot;/&gt;&lt;path d=&quot;M3,28 Q6,20 15,20 Q24,20 27,28&quot; fill=&quot;#1e3045&quot;/&gt;&lt;/svg&gt;'"></div>
+        <div class="bbl bbl-c"><div class="dname" style="color:var(--cry);">Carlotta</div>"Kau mencari sesuatu?" suaranya mengalun, sehalus halaman buku yang terbuka.</div>
+      </div>
+      <div class="dlg" id="d3b">
+        <div class="av av-p"><svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="12" r="7" fill="#d4a880"/><path d="M3,28 Q6,20 15,20 Q24,20 27,28" fill="#3a1a08"/></svg></div>
+        <div class="bbl bbl-p"><div class="dname" style="color:var(--gold);">Aku</div>"Hanya… menghindari kebisingan."</div>
+      </div>
+      <div class="dlg C" id="d3c">
+        <div class="av av-c"><img src="profil.png" alt="C" onerror="this.outerHTML='&lt;svg width=&quot;30&quot; height=&quot;30&quot; viewBox=&quot;0 0 30 30&quot;&gt;&lt;circle cx=&quot;15&quot; cy=&quot;12&quot; r=&quot;7&quot; fill=&quot;#c8dde8&quot;/&gt;&lt;path d=&quot;M3,28 Q6,20 15,20 Q24,20 27,28&quot; fill=&quot;#1e3045&quot;/&gt;&lt;/svg&gt;'"></div>
+        <div class="bbl bbl-c"><div class="dname" style="color:var(--cry);">Carlotta</div>"Tapi di sini pun ada kebisingan." Dia melangkah mendekat, gaun merahnya berdesir lembut. <em>"Suara hati yang tak mau diam."</em></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 4: ANATOMY OF LONGING ══ -->
+<div class="scene" id="s4" style="background:radial-gradient(ellipse at 30% 20%,rgba(55,25,8,.8),transparent 55%),linear-gradient(180deg,#0d0507,#190a0e 50%,#0d0507);">
+  <div id="dust4" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+  <div class="sc" style="z-index:20;">
+    <div class="bv"><div class="b3"><div class="bc">
+      <div class="bt">The Anatomy<br>of<br>Longing</div>
+      <div style="width:35px;height:1px;background:var(--gold);opacity:.4;margin-top:.6rem;"></div>
+      <div style="margin-top:.5rem;font-size:.55rem;color:var(--gold);opacity:.5;font-family:'IM Fell English',serif;font-style:italic;">Vol. III</div>
+    </div></div></div>
+    <div class="tp">
+      <div class="lbl slbl">✦ Sebuah Buku &amp; Sebuah Pertanyaan</div>
+      <div class="dlg C" style="opacity:1;transform:none;margin-bottom:.9rem;">
+        <div class="av av-c"><img src="profil.png" alt="C" onerror="this.outerHTML='&lt;svg width=&quot;30&quot; height=&quot;30&quot; viewBox=&quot;0 0 30 30&quot;&gt;&lt;circle cx=&quot;15&quot; cy=&quot;12&quot; r=&quot;7&quot; fill=&quot;#c8dde8&quot;/&gt;&lt;path d=&quot;M3,28 Q6,20 15,20 Q24,20 27,28&quot; fill=&quot;#1e3045&quot;/&gt;&lt;/svg&gt;'"></div>
+        <div class="bbl bbl-c"><div class="dname" style="color:var(--cry);">Carlotta</div>"Kau percaya kerinduan bisa diurai seperti ilmu pasti?"</div>
+      </div>
+      <div class="dlg" style="opacity:1;transform:none;margin-bottom:.9rem;">
+        <div class="av av-p"><svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="12" r="7" fill="#d4a880"/><path d="M3,28 Q6,20 15,20 Q24,20 27,28" fill="#3a1a08"/></svg></div>
+        <div class="bbl bbl-p"><div class="dname" style="color:var(--gold);">Aku</div>"Tidak. Tapi mungkin bisa <em>dijelaskan lewat kisah-kisah.</em>"</div>
+      </div>
+      <div class="quot">
+        <em>"I would cross oceans of ink to find you"</em>
+        <div style="font-size:.72rem;color:var(--gold);margin-top:.5rem;font-family:'Cormorant Garamond',serif;font-style:normal;letter-spacing:.12em;">— Ditulis oleh seorang nelayan untuk kekasihnya yang hilang di badai</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 5: CRYSTALLUM ══ -->
+<div class="scene" id="s5" style="background:radial-gradient(ellipse at 50% 35%,#080c18,#040208);">
+  <div id="cshdots" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+  <div class="sc" style="z-index:20;">
+    <div class="bv"><div class="b3" style="animation-duration:3.5s;"><div class="bc" style="background:linear-gradient(150deg,#040208,#080c18);border-color:rgba(184,212,232,.3);">
+      <div class="bt" style="color:var(--cry);font-size:.95rem;letter-spacing:.12em;">Crystallum</div>
+      <svg width="44" height="55" viewBox="0 0 44 55" style="margin-top:.6rem;">
+        <polygon points="22,3 40,16 40,39 22,52 4,39 4,16" fill="rgba(184,212,232,.07)" stroke="#b8d4e8" stroke-width="1.2" opacity=".8"/>
+        <polygon points="22,10 34,20 34,35 22,46 10,35 10,20" fill="rgba(184,212,232,.04)" stroke="#b8d4e8" stroke-width=".5" opacity=".5"/>
+        <line x1="22" y1="3" x2="22" y2="52" stroke="#b8d4e8" stroke-width=".4" opacity=".4"/>
+        <line x1="4" y1="16" x2="40" y2="39" stroke="#b8d4e8" stroke-width=".4" opacity=".3"/>
+        <line x1="40" y1="16" x2="4" y2="39" stroke="#b8d4e8" stroke-width=".4" opacity=".3"/>
+        <circle cx="22" cy="27" r="4" fill="rgba(184,212,232,.15)"><animate attributeName="r" values="3;5;3" dur="3s" repeatCount="indefinite"/></circle>
+      </svg>
+    </div></div></div>
+    <div class="tp">
+      <div class="lbl slbl" style="color:var(--cry);">✦ Crystallum — Buku Tanpa Nama</div>
+      <p class="st" style="margin-bottom:1rem;">Carlotta menarik buku lain dari rak tertinggi—sampulnya hitam dengan tulisan emas pudar.</p>
+      <div class="quot quot-c"><em>"Tentang seorang wanita yang tubuhnya terbuat dari kristal. Cantik, tapi rapuh. Jika jatuh cinta, hatinya akan retak."</em></div>
+      <div class="dlg" style="opacity:1;transform:none;margin:.8rem 0;">
+        <div class="av av-p"><svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="12" r="7" fill="#d4a880"/><path d="M3,28 Q6,20 15,20 Q24,20 27,28" fill="#3a1a08"/></svg></div>
+        <div class="bbl bbl-p"><div class="dname" style="color:var(--gold);">Aku</div>"Apa akhir ceritanya?"</div>
+      </div>
+      <div class="dlg C" style="opacity:1;transform:none;">
+        <div class="av av-c"><img src="profil.png" alt="C" onerror="this.outerHTML='&lt;svg width=&quot;30&quot; height=&quot;30&quot; viewBox=&quot;0 0 30 30&quot;&gt;&lt;circle cx=&quot;15&quot; cy=&quot;12&quot; r=&quot;7&quot; fill=&quot;#c8dde8&quot;/&gt;&lt;path d=&quot;M3,28 Q6,20 15,20 Q24,20 27,28&quot; fill=&quot;#1e3045&quot;/&gt;&lt;/svg&gt;'"></div>
+        <div class="bbl bbl-c"><div class="dname" style="color:var(--cry);">Carlotta</div><em>"Dia memilih hancur daripada kehilangan cintanya."</em></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 6: MAPLE LEAVES ══ -->
+<div class="scene" id="s6" style="background:radial-gradient(ellipse at 30% 20%,rgba(55,25,8,.8),transparent 55%),linear-gradient(180deg,#0d0507,#190a0e 50%,#0d0507);">
+  <div id="lfCon" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5;"></div>
+  <div class="sc" style="z-index:20;">
+    <div class="tp">
+      <div class="lbl slbl">✦ Akhir Hari Pertama — Daun Maple</div>
+      <p class="st">Suasana mendadak berat. Sebelum aku bisa bertanya lebih, Carlotta sudah berbalik—gaun merahnya berputar seperti <em>daun maple musim gugur.</em></p>
+      <div class="dlg C" style="opacity:1;transform:none;margin:1rem 0;">
+        <div class="av av-c"><img src="profil.png" alt="C" onerror="this.outerHTML='&lt;svg width=&quot;30&quot; height=&quot;30&quot; viewBox=&quot;0 0 30 30&quot;&gt;&lt;circle cx=&quot;15&quot; cy=&quot;12&quot; r=&quot;7&quot; fill=&quot;#c8dde8&quot;/&gt;&lt;path d=&quot;M3,28 Q6,20 15,20 Q24,20 27,28&quot; fill=&quot;#1e3045&quot;/&gt;&lt;/svg&gt;'"></div>
+        <div class="bbl bbl-c"><div class="dname" style="color:var(--cry);">Carlotta</div><em>"Kembalilah besok… jika kau ingin tahu kisah-kisah yang tak tertulis."</em></div>
+      </div>
+      <p class="st">Dan seperti bayangan yang dimakan cahaya, dia menghilang di antara rak-rak kayu yang tinggi.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 7: DAWN ══ -->
+<div class="scene" id="s7">
+  <div class="sunrise scbg" id="sr7"></div>
+  <div class="scbg" style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,2,6,.75),transparent 55%);z-index:2;pointer-events:none;"></div>
+  <div id="stars7" class="scbg" style="position:absolute;inset:0;pointer-events:none;z-index:3;"></div>
+  <div class="sc" style="z-index:20;">
+    <div class="tp">
+      <div class="lbl slbl">✦ Hari Kedua · Sebelum Fajar</div>
+      <p class="st">Esoknya, aku datang sebelum matahari terbit. Carlotta sudah ada di sana, duduk di bangku dekat jendela dengan tumpukan buku antik. Hari ini, rambut putihnya dikepang longgar, dan di lehernya tergantung <em>kalung kristal abu-abu redup.</em><br><br>"Ini," dia menyodorkan buku abu-abu tanpa judul, <em>"tentang dua jiwa yang terpisah waktu."</em><br><br>Kami duduk berjam-jam. Aku tak pernah bertanya mengapa dia selalu muncul tepat saat aku sendirian.</p>
+      <div class="crysvg">
+        <svg width="90" height="65" viewBox="0 0 90 65">
+          <path d="M12,28 Q45,34 78,28" stroke="#b8d4e8" stroke-width="1.2" fill="none" opacity=".65"/>
+          <circle cx="28" cy="26" r="2" fill="#b8d4e8" opacity=".4"/>
+          <circle cx="62" cy="26" r="2" fill="#b8d4e8" opacity=".4"/>
+          <polygon points="45,30 53,42 45,56 37,42" fill="none" stroke="#b8d4e8" stroke-width="1.6"/>
+          <polygon points="45,36 50,43 45,50 40,43" fill="rgba(184,212,232,.15)" stroke="#b8d4e8" stroke-width=".6"/>
+          <circle cx="45" cy="43" r="3" fill="#b8d4e8" opacity=".5"><animate attributeName="opacity" values=".2;.8;.2" dur="2.2s" repeatCount="indefinite"/></circle>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 8: THE TOUCH ══ -->
+<div class="scene" id="s8" style="background:radial-gradient(ellipse at 30% 20%,rgba(55,25,8,.8),transparent 55%),linear-gradient(180deg,#0d0507,#190a0e 50%,#0d0507);">
+  <canvas id="crackCv" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:15;"></canvas>
+  <div class="sc" style="z-index:20;">
+    <div class="tp">
+      <div class="lbl slbl">✦ Hari Ketiga · Sentuhan yang Mengubah Segalanya</div>
+      <p class="st">Di hari ketiga, segalanya runtuh.<br><br>Saat tanganku tak sengaja menyentuh kulitnya—</p>
+      <div style="text-align:center;margin:1.8rem 0;line-height:1.5;">
+        <span style="font-family:'IM Fell English',serif;font-size:2.2rem;color:var(--cry2);letter-spacing:.18em;text-shadow:0 0 25px rgba(184,212,232,.55);">dingin.</span><br>
+        <span style="font-family:'Cormorant Garamond',serif;font-size:.9rem;color:var(--cream2);letter-spacing:.35em;">Sangat dingin.</span>
+      </div>
+      <p class="st">Carlotta menarik diri. Kalung kristalnya <em style="color:var(--cry2);">retak—</em> suara berderak kecil memecah keheningan abadi perpustakaan.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 9: REVELATION ══ -->
+<div class="scene" id="s9" style="background:radial-gradient(ellipse at 50% 40%,#090d1c,#040208);">
+  <div id="tearCon" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5;"></div>
+  <div class="sc" style="z-index:20;">
+    <div class="crysvg">
+      <svg width="90" height="100" viewBox="0 0 90 100">
+        <polygon points="45,5 78,22 78,68 45,88 12,68 12,22" fill="rgba(184,212,232,.05)" stroke="#b8d4e8" stroke-width="1.6" opacity=".8"/>
+        <path d="M45,5 L40,28 L28,44 L34,62" stroke="#fff" stroke-width="1.2" fill="none" opacity=".85"><animate attributeName="opacity" values=".3;1;.5;.9;.3" dur="2.5s" repeatCount="indefinite"/></path>
+        <path d="M40,28 L50,48 L45,72" stroke="#fff" stroke-width=".7" fill="none" opacity=".6"/>
+        <ellipse cx="45" cy="52" rx="6" ry="8" fill="rgba(184,212,232,.25)"><animate attributeName="ry" values="7;10;7" dur="3.5s" repeatCount="indefinite"/></ellipse>
+        <circle cx="45" cy="52" r="2.5" fill="#b8d4e8" opacity=".4"><animate attributeName="opacity" values=".2;.7;.2" dur="1.8s" repeatCount="indefinite"/></circle>
+      </svg>
+    </div>
+    <div class="tp">
+      <div class="lbl slbl" style="color:var(--cry);">✦ Pengakuan</div>
+      <div class="dlg C" style="opacity:1;transform:none;">
+        <div class="av av-c"><img src="profil.png" alt="C" onerror="this.outerHTML='&lt;svg width=&quot;30&quot; height=&quot;30&quot; viewBox=&quot;0 0 30 30&quot;&gt;&lt;circle cx=&quot;15&quot; cy=&quot;12&quot; r=&quot;7&quot; fill=&quot;#c8dde8&quot;/&gt;&lt;path d=&quot;M3,28 Q6,20 15,20 Q24,20 27,28&quot; fill=&quot;#1e3045&quot;/&gt;&lt;/svg&gt;'"></div>
+        <div class="bbl bbl-c"><div class="dname" style="color:var(--cry);">Carlotta</div><em>"Aku bukan bagian dari duniamu. Aku penjaga antara dunia nyata dan yang tertulis. Setiap kali seseorang menemukanku, kristalku… mengikatku di sini."</em></div>
+      </div>
+      <div class="dlg" style="opacity:1;transform:none;margin:.9rem 0;">
+        <div class="av av-p"><svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="12" r="7" fill="#d4a880"/><path d="M3,28 Q6,20 15,20 Q24,20 27,28" fill="#3a1a08"/></svg></div>
+        <div class="bbl bbl-p"><div class="dname" style="color:var(--gold);">Aku</div>"Tapi kenapa?"</div>
+      </div>
+      <div class="dlg C" style="opacity:1;transform:none;">
+        <div class="av av-c"><img src="profil.png" alt="C" onerror="this.outerHTML='&lt;svg width=&quot;30&quot; height=&quot;30&quot; viewBox=&quot;0 0 30 30&quot;&gt;&lt;circle cx=&quot;15&quot; cy=&quot;12&quot; r=&quot;7&quot; fill=&quot;#c8dde8&quot;/&gt;&lt;path d=&quot;M3,28 Q6,20 15,20 Q24,20 27,28&quot; fill=&quot;#1e3045&quot;/&gt;&lt;/svg&gt;'"></div>
+        <div class="bbl bbl-c" style="border-color:rgba(184,212,232,.5);"><div class="dname" style="color:var(--cry);">Carlotta</div><em>"Karena cinta manusia seperti tinta—indah, tapi <strong style="color:#fff;font-weight:500;">mengotori kesempurnaan abadi.</strong>"</em></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 10: FAREWELL ══ -->
+<div class="scene" id="s10" style="background:radial-gradient(ellipse at 30% 20%,rgba(55,25,8,.8),transparent 55%),linear-gradient(180deg,#0d0507,#190a0e 50%,#0d0507);">
+  <div id="pstCon" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5;"></div>
+  <div class="sc" style="z-index:20;">
+    <div class="tp">
+      <div class="lbl slbl">✦ Perpisahan</div>
+      <p class="st">Angin tiba-tiba berhembus kencang. Halaman-halaman buku terbuka liar. Carlotta tersenyum sedih sambil tubuhnya mulai <em>berpendar…</em></p>
+      <div class="dlg C" style="opacity:1;transform:none;margin:1rem 0;">
+        <div class="av av-c"><img src="profil.png" alt="C" onerror="this.outerHTML='&lt;svg width=&quot;30&quot; height=&quot;30&quot; viewBox=&quot;0 0 30 30&quot;&gt;&lt;circle cx=&quot;15&quot; cy=&quot;12&quot; r=&quot;7&quot; fill=&quot;#c8dde8&quot;/&gt;&lt;path d=&quot;M3,28 Q6,20 15,20 Q24,20 27,28&quot; fill=&quot;#1e3045&quot;/&gt;&lt;/svg&gt;'"></div>
+        <!-- FIX #6 #7: id=bb10, fades after 8s, resets on restart -->
+        <div class="bbl bbl-c" id="bb10" style="transition:opacity 3.5s ease,filter 3.5s ease;">
+          <div class="dname" style="color:var(--cry);">Carlotta</div>
+          <em>"Lihatlah aku di antara baris-baris yang kau baca. Di setiap metafora tentang cahaya dan kerinduan."</em>
+        </div>
+      </div>
+      <div class="dlg" style="opacity:1;transform:none;margin-bottom:1rem;">
+        <div class="av av-p"><svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="12" r="7" fill="#d4a880"/><path d="M3,28 Q6,20 15,20 Q24,20 27,28" fill="#3a1a08"/></svg></div>
+        <div class="bbl bbl-p"><div class="dname" style="color:var(--gold);">Aku</div><strong>"Jangan pergi!"</strong></div>
+      </div>
+      <p class="st">Tapi tanganku hanya meraih udara. Di lantai, tinggal sehelai halaman kosong berteteskan air mata yang membentuk kata…</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 11: SELAMAT TINGGAL ══ -->
+<div class="scene" id="s11" style="background:radial-gradient(ellipse at 50% 50%,#0c0914,#040208);">
+  <div id="fpCon11" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+  <div id="s11inner" style="z-index:20;text-align:center;position:relative;width:92%;max-width:480px;">
+    <div style="width:190px;height:255px;margin:0 auto 1.8rem;background:rgba(244,232,209,.03);border:1px solid rgba(244,232,209,.12);position:relative;display:flex;align-items:center;justify-content:center;">
+      <div style="position:absolute;top:38px;left:55px;width:3px;height:10px;background:rgba(184,212,232,.4);border-radius:50%;transform:rotate(8deg);"></div>
+      <div style="position:absolute;top:46px;left:75px;width:2.5px;height:7px;background:rgba(184,212,232,.3);border-radius:50%;"></div>
+      <div style="position:absolute;top:30px;left:95px;width:3px;height:11px;background:rgba(184,212,232,.38);border-radius:50%;transform:rotate(-5deg);"></div>
+      <div style="position:absolute;top:42px;left:112px;width:2px;height:8px;background:rgba(184,212,232,.25);border-radius:50%;transform:rotate(12deg);"></div>
+      <div class="fwGlow" style="font-size:1.6rem;padding:1rem;">"Selamat tinggal"</div>
+    </div>
+    <div id="ftear" style="position:relative;height:50px;display:flex;justify-content:center;align-items:flex-start;gap:6px;overflow:visible;"></div>
+  </div>
+</div>
+
+<!-- ══ SCENE 12: EPILOGUE (scrollable desktop+mobile) ══ -->
+<div class="scene" id="s12" style="background:radial-gradient(ellipse at 40% 40%,#130810,#040205);">
+  <div class="rflash scbg"></div>
+  <div id="fpCon12" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+  <div id="rptls" class="scbg" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:6;"></div>
+  <div class="sc" style="z-index:20;text-align:center;">
+    <div style="font-size:.65rem;letter-spacing:.55em;color:var(--gold);text-transform:uppercase;margin-bottom:1.4rem;opacity:.6;">✦ Epilog ✦</div>
+    <div class="tp" style="text-align:left;">
+      <p class="ept" style="text-align:center;">Kini, setiap kali aku membuka buku tua,<br>aroma mawar dan dinginnya kristal selalu menyapaku.<br><br>Dan di sudut-sudut gelap perpustakaan,<br>kadang aku melihat kilatan—</p>
+      <div style="display:flex;justify-content:center;margin:1.8rem 0;">
+        <svg width="55" height="95" viewBox="0 0 55 95" class="dress-flit">
+          <path d="M14,8 Q8,40 4,80 Q18,86 27,83 Q36,86 51,80 Q47,40 41,8 Z" fill="#8b1a2a" opacity=".85"/>
+          <path d="M14,8 Q20,18 27,14 Q34,18 41,8 Q34,4 27,5 Q20,4 14,8 Z" fill="#5a0e1a"/>
+          <path d="M18,35 Q27,42 37,35" stroke="rgba(192,60,80,.25)" stroke-width=".8" fill="none"/>
+        </svg>
+      </div>
+      <p class="ept" style="text-align:center;"><em>…kilatan gaun merah.</em></p>
+    </div>
+    <div style="margin-top:1.6rem;max-width:480px;padding:1.2rem 1.6rem;border-top:1px solid rgba(201,160,85,.12);">
+      <p style="font-family:'Cormorant Garamond',serif;font-size:.85rem;color:#786a5a;font-style:italic;line-height:1.85;letter-spacing:.04em;">Kristal di tubuhnya adalah simbol pengorbanan antara keabadian dan cinta fana. Apakah Carlotta benar-benar hilang, atau menjadi bagian dari setiap kisah cinta yang dibaca sang protagonis?</p>
+    </div>
+    <div style="margin-top:1.5rem;text-align:center;padding-bottom:2.5rem;">
+      <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-style:italic;color:var(--gold);opacity:.45;margin-bottom:1.6rem;">~ Tamat ~</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:.8rem;margin-bottom:1.8rem;opacity:.35;">
+        <div style="width:40px;height:1px;background:linear-gradient(90deg,transparent,var(--gold));"></div>
+        <svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,0 10,5 5,10 0,5" fill="var(--gold)" opacity=".6"/></svg>
+        <div style="width:40px;height:1px;background:linear-gradient(90deg,var(--gold),transparent);"></div>
+      </div>
+      <button id="restBtn" onclick="restart()"
+        style="background:linear-gradient(135deg,rgba(201,160,85,.08),rgba(139,26,42,.06));
+               border:1px solid rgba(201,160,85,.38);color:var(--gold2);
+               font-family:'IM Fell English',serif;font-style:italic;font-size:1.05rem;
+               letter-spacing:.22em;padding:.9rem 2.6rem;cursor:pointer;
+               transition:all .4s;outline:none;-webkit-tap-highlight-color:transparent;
+               text-shadow:0 0 14px rgba(201,160,85,.3);
+               box-shadow:0 0 22px rgba(201,160,85,.06),inset 0 0 18px rgba(201,160,85,.02);"
+        onmouseover="this.style.borderColor='rgba(201,160,85,.7)';this.style.boxShadow='0 0 36px rgba(201,160,85,.18)'"
+        onmouseout="this.style.borderColor='rgba(201,160,85,.38)';this.style.boxShadow='0 0 22px rgba(201,160,85,.06)'">
+        ✦ &nbsp;Baca Ulang&nbsp; ✦
+      </button>
+      <p style="margin-top:1rem;font-size:.68rem;letter-spacing:.3em;color:var(--cream2);opacity:.3;font-family:'Cormorant Garamond',serif;text-transform:uppercase;">Kisah ini menunggumu kembali</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ STATE ══
+let cur=0;const TOTAL=12;
+let audioCtx=null,rafIds={},fadeTimer=null;
+const isMobile=window.matchMedia('(max-width:700px)').matches;
+// FIX #5: adaptive volume
+const VOL=isMobile?0.52:0.20;
+
+// ══ AUDIO ══
+function ac(){ if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function noise(dur,freq,q,vol,type='bandpass'){
+  const c=ac(),sr=c.sampleRate,buf=c.createBuffer(1,sr*dur,sr),d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=c.createBufferSource();src.buffer=buf;
+  const flt=c.createBiquadFilter();flt.type=type;flt.frequency.value=freq;if(q)flt.Q.value=q;
+  const g=c.createGain();g.gain.setValueAtTime(vol*VOL,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dur);
+  src.connect(flt);flt.connect(g);g.connect(c.destination);src.start();
+}
+function pageTurn(){ noise(.25,3000,1,.3,'highpass'); }
+function crystalChime(){
+  const c=ac();[880,1108,1320,1760,2200].forEach((f,i)=>{
+    const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;
+    const t=c.currentTime+i*.07;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.12*VOL,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+2);
+    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+2);
+  });
+}
+function crystalCrack(){ noise(.12,4500,4,.6,'bandpass');setTimeout(crystalChime,150); }
+function windSound(){
+  const c=ac(),sr=c.sampleRate,buf=c.createBuffer(1,sr*3.5,sr),d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*.15;
+  const src=c.createBufferSource();src.buffer=buf;
+  const flt=c.createBiquadFilter();flt.type='lowpass';flt.frequency.value=380;
+  const g=c.createGain();g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(.35*VOL,c.currentTime+1.2);g.gain.linearRampToValueAtTime(0,c.currentTime+3.5);
+  src.connect(flt);flt.connect(g);g.connect(c.destination);src.start();
+}
+function heartbeat(){
+  const c=ac();function beat(t){const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=58;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.38*VOL,t+.05);g.gain.exponentialRampToValueAtTime(.001,t+.22);
+    o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.22);}
+  const n=c.currentTime;beat(n);beat(n+.14);
+}
+function tearSound(){
+  const c=ac(),o=c.createOscillator(),g=c.createGain();o.type='sine';
+  o.frequency.setValueAtTime(1100,c.currentTime);o.frequency.exponentialRampToValueAtTime(350,c.currentTime+.55);
+  g.gain.setValueAtTime(.08*VOL,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.55);
+  o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.55);
+}
+function ambient(){
+  const c=ac(),sr=c.sampleRate,buf=c.createBuffer(1,sr*6,sr),d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*.06;
+  const src=c.createBufferSource();src.buffer=buf;src.loop=true;
+  const flt=c.createBiquadFilter();flt.type='lowpass';flt.frequency.value=180;
+  const g=c.createGain();g.gain.value=.06*VOL;src.connect(flt);flt.connect(g);g.connect(c.destination);src.start();
+}
+
+// ══ FACTORIES ══
+function mkDust(id,n){ const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  for(let i=0;i<n;i++){ const d=document.createElement('div');d.className='dust';
+    d.style.left=Math.random()*100+'%';d.style.top=(40+Math.random()*55)+'%';
+    d.style.width=(1+Math.random()*2.5)+'px';d.style.height=(1+Math.random()*2.5)+'px';
+    d.style.animationDuration=(10+Math.random()*18)+'s';d.style.animationDelay=Math.random()*12+'s';
+    d.style.opacity=.2+Math.random()*.45;el.appendChild(d);} }
+
+function mkRays(id){ const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  const cx=window.innerWidth/2;
+  for(let i=0;i<10;i++){ const r=document.createElement('div');r.className='ray';
+    const ang=-40+(i/9)*80,len=350+Math.random()*300,wd=1+Math.random()*3.5;
+    r.style.left=cx+'px';r.style.top='0';r.style.height=len+'px';r.style.width=wd+'px';
+    r.style.transformOrigin='top center';r.style.transform=`rotate(${ang}deg)`;
+    r.style.animationDelay=Math.random()*4+'s';r.style.animationDuration=(3+Math.random()*3.5)+'s';
+    el.appendChild(r);} }
+
+function mkSparkles(id){ const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  for(let i=0;i<18;i++){ const s=document.createElement('div');s.className='sp';
+    s.style.left=(15+Math.random()*70)+'%';s.style.top=(5+Math.random()*65)+'%';
+    s.style.width=(3+Math.random()*7)+'px';s.style.height=(3+Math.random()*7)+'px';
+    s.style.animationDelay=Math.random()*4+'s';s.style.animationDuration=(1.5+Math.random()*2.5)+'s';
+    el.appendChild(s);} }
+
+// FIX #3: negative delay = leaves are already mid-fall when scene opens
+function mkLeaves(id){ const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  const lt=['🍂','🍁','🍃'];
+  for(let i=0;i<18;i++){ const l=document.createElement('div');l.className='lf';
+    l.textContent=lt[Math.floor(Math.random()*lt.length)];
+    l.style.left=Math.random()*100+'%';l.style.top='-35px';
+    l.style.fontSize=(.9+Math.random()*1.1)+'rem';
+    const dur=9+Math.random()*9;l.style.animationDuration=dur+'s';
+    l.style.animationDelay=(Math.random()*-dur)+'s'; // negative = already in progress
+    el.appendChild(l);} }
+
+function mkCrystalDots(id){ const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  for(let i=0;i<35;i++){ const d=document.createElement('div');d.className='cdot';
+    d.style.left=Math.random()*100+'%';d.style.top=Math.random()*100+'%';
+    d.style.width=(1+Math.random()*3.5)+'px';d.style.height=(1+Math.random()*3.5)+'px';
+    const r=184+Math.random()*50,g2=212+Math.random()*38;
+    d.style.background=`rgba(${r},${g2},232,${.25+Math.random()*.55})`;
+    d.style.animationDelay=Math.random()*4+'s';d.style.animationDuration=(1.2+Math.random()*3.5)+'s';
+    el.appendChild(d);} }
+
+function mkTears(id){ const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  const cx=40+Math.random()*20;
+  for(let i=0;i<10;i++){ const t=document.createElement('div');t.className='tear';
+    t.style.left=(cx-8+Math.random()*16)+'%';t.style.top=(25+Math.random()*20)+'%';
+    t.style.animationDelay=Math.random()*4+'s';t.style.animationDuration=(1.4+Math.random()*1.2)+'s';
+    el.appendChild(t);if(i<3) setTimeout(()=>tearSound(),i*500+Math.random()*300);} }
+
+function mkPageStorm(id){ const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  for(let i=0;i<22;i++){ const p=document.createElement('div');p.className='pst';
+    p.style.left=(5+Math.random()*85)+'%';p.style.top=(5+Math.random()*85)+'%';
+    p.style.width=(35+Math.random()*40)+'px';p.style.height=(48+Math.random()*55)+'px';
+    p.style.animationDuration=(3+Math.random()*4.5)+'s';p.style.animationDelay=Math.random()*3+'s';
+    el.appendChild(p);} }
+
+function mkFloatPages(id){ const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  for(let i=0;i<10;i++){ const p=document.createElement('div');p.className='fp';
+    p.style.left=(5+Math.random()*88)+'%';p.style.top=(5+Math.random()*88)+'%';
+    p.style.width=(30+Math.random()*40)+'px';p.style.height=(42+Math.random()*52)+'px';
+    p.style.animationDuration=(6+Math.random()*9)+'s';p.style.animationDelay=Math.random()*6+'s';
+    el.appendChild(p);} }
+
+function mkStars(id){ const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  for(let i=0;i<60;i++){ const s=document.createElement('div'),sz=.5+Math.random()*1.5;
+    s.style.cssText=`position:absolute;border-radius:50%;background:rgba(255,255,220,.6);
+      width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*55}%;
+      animation:starFade ${4+Math.random()*4}s ease ${Math.random()*3}s forwards;`;
+    el.appendChild(s);}
+  if(!document.getElementById('starKF')){
+    const st=document.createElement('style');st.id='starKF';
+    st.textContent='@keyframes starFade{0%{opacity:.6;}100%{opacity:0;transform:scale(.3);}}';
+    document.head.appendChild(st);} }
+
+function mkRosePetals(id){ const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  for(let i=0;i<12;i++){ const p=document.createElement('div'),sz=6+Math.random()*8;
+    p.style.cssText=`position:absolute;width:${sz}px;height:${sz}px;
+      background:radial-gradient(ellipse at 40% 35%,rgba(180,40,60,.5),rgba(100,15,25,.3));
+      border-radius:50% 10% 50% 10%;left:${Math.random()*100}%;top:-20px;
+      animation:petalF ${8+Math.random()*8}s ease-in ${Math.random()*6}s infinite;opacity:.6;`;
+    el.appendChild(p);}
+  if(!document.getElementById('petalKF')){
+    const st=document.createElement('style');st.id='petalKF';
+    st.textContent='@keyframes petalF{0%{transform:translateY(0) rotate(0deg);opacity:0;}5%{opacity:.6;}90%{opacity:.3;}100%{transform:translateY(110vh) rotate(720deg) translateX(40px);opacity:0;}}';
+    document.head.appendChild(st);} }
+
+// FIX #8: slower, more natural book rain
+function initBookRain(){
+  const cv=document.getElementById('coverFx');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  cv.width=window.innerWidth;cv.height=window.innerHeight;
+  const cols=['#1e0c0f','#18200c','#0c1420','#1e0e06','#120818','#1a1005','#0e1218'];
+  const spine=['#c9a055','#7a5520','#588040','#4858a0','#9a5848','#6848a8','#8a6030'];
+  const books=Array.from({length:11},()=>({
+    x:Math.random()*cv.width,
+    y:-80-Math.random()*cv.height,   // stagger so not all enter together
+    w:36+Math.random()*26,h:58+Math.random()*52,
+    rot:(Math.random()-.5)*.3,       // gentle tilt
+    rs:(Math.random()-.5)*.0025,     // very slow rotation
+    spd:.45+Math.random()*.7,        // slow fall
+    col:cols[0|Math.random()*cols.length],
+    sp:spine[0|Math.random()*spine.length],
+    swing:Math.random()*Math.PI*2,ws:.007+Math.random()*.010
+  }));
+  function draw(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    books.forEach(b=>{
+      b.y+=b.spd;b.rot+=b.rs;b.swing+=b.ws;b.x+=Math.sin(b.swing)*.3;
+      if(b.y>cv.height+130){b.y=-130-Math.random()*100;b.x=Math.random()*cv.width;}
+      ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.rot);
+      ctx.shadowColor='rgba(0,0,0,.65)';ctx.shadowBlur=22;ctx.shadowOffsetX=5;ctx.shadowOffsetY=9;
+      ctx.fillStyle=b.col;ctx.fillRect(-b.w/2,-b.h/2,b.w,b.h);
+      ctx.shadowColor='transparent';
+      ctx.fillStyle=b.sp;ctx.fillRect(-b.w/2,-b.h/2,9,b.h);  // spine
+      ctx.fillStyle='#e8d8c0';ctx.fillRect(b.w/2-7,-b.h/2+2,7,b.h-4); // pages
+      ctx.strokeStyle='rgba(160,130,90,.25)';ctx.lineWidth=.4;
+      for(let l=5;l<b.h-5;l+=4){ ctx.beginPath();ctx.moveTo(b.w/2-7,-b.h/2+l);ctx.lineTo(b.w/2,-b.h/2+l);ctx.stroke(); }
+      ctx.strokeStyle='rgba(201,160,85,.18)';ctx.lineWidth=.6;
+      ctx.strokeRect(-b.w/2+2,-b.h/2+2,b.w-4,b.h-4);
+      ctx.restore();
+    });
+    if(cur===0) rafIds.books=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function drawCracks(){
+  const cv=document.getElementById('crackCv');if(!cv)return;
+  const ctx=cv.getContext('2d');cv.width=window.innerWidth;cv.height=window.innerHeight;
+  function branch(x,y,ang,len,dep){
+    if(dep<=0||len<4)return;
+    const ex=x+Math.cos(ang)*len,ey=y+Math.sin(ang)*len;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);
+    ctx.strokeStyle=`rgba(184,212,232,${.08+dep*.06})`;ctx.lineWidth=dep*.45;ctx.stroke();
+    branch(ex,ey,ang+(Math.random()-.3)*.9,len*.62,dep-1);
+    if(Math.random()>.38) branch(ex,ey,ang-(Math.random()+.15)*.85,len*.5,dep-2);
+  }
+  const cx=cv.width/2,cy=cv.height/2;
+  [{x:cx-40,y:cy-90,a:Math.PI/4},{x:cx+25,y:cy-70,a:Math.PI/3.2},{x:cx-10,y:cy+40,a:-Math.PI/7}]
+    .forEach(o=>{branch(o.x,o.y,o.a,90,6);branch(o.x,o.y,o.a+Math.PI,45,4);});
+  ctx.globalCompositeOperation='screen';
+  [{x:cx-40,y:cy-90},{x:cx+25,y:cy-70},{x:cx-10,y:cy+40}].forEach(o=>{
+    const grd=ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,35);
+    grd.addColorStop(0,'rgba(184,212,232,.18)');grd.addColorStop(1,'rgba(184,212,232,0)');
+    ctx.fillStyle=grd;ctx.fillRect(o.x-35,o.y-35,70,70);
+  });
+  let alpha=1;
+  function fadeOut(){if(alpha<=0){ctx.clearRect(0,0,cv.width,cv.height);return;}
+    alpha-=.012;ctx.globalAlpha=alpha;rafIds.crack=requestAnimationFrame(fadeOut);}
+  setTimeout(()=>{ctx.globalCompositeOperation='source-over';fadeOut();},2500);
+}
+
+function revDlg(ids,delay=500){
+  ids.forEach((id,i)=>setTimeout(()=>{const el=document.getElementById(id);if(el)el.classList.add('show');},i*delay+400));
+}
+function shake(){ document.body.classList.add('shk');setTimeout(()=>document.body.classList.remove('shk'),560); }
+
+// FIX #6 & #7: 8s before fade; reset state on restart
+function fadeCarlotta(){
+  if(fadeTimer){clearTimeout(fadeTimer);fadeTimer=null;}
+  const el=document.getElementById('bb10');if(!el)return;
+  el.style.opacity='1';el.style.filter='none';
+  fadeTimer=setTimeout(()=>{el.style.opacity='.05';el.style.filter='blur(3px)';},8000);
+}
+
+function mkFlyTears(){
+  const el=document.getElementById('ftear');if(!el)return;el.innerHTML='';
+  for(let i=0;i<5;i++){
+    const t=document.createElement('div');
+    t.style.cssText=`width:3px;height:10px;background:linear-gradient(180deg,var(--cry2),rgba(184,212,232,.2));
+      border-radius:0 0 50% 50%;animation:tearF ${1.6+Math.random()*.8}s ease-in ${i*.35+Math.random()*.4}s infinite;`;
+    el.appendChild(t);if(i<2) setTimeout(()=>tearSound(),i*400+200);} }
+
+// ══ SCENE INIT ══
+function initScene(n){
+  Object.values(rafIds).forEach(id=>cancelAnimationFrame(id));rafIds={};
+  switch(n){
+    case 0:setTimeout(initBookRain,80);break;
+    case 1:mkDust('dust1',28);ambient();break;
+    case 2:mkRays('rays2');mkSparkles('sps2');crystalChime();break;
+    case 3:mkDust('dust3',18);revDlg(['d3a','d3b','d3c'],550);break;
+    case 4:mkDust('dust4',14);break;
+    case 5:mkCrystalDots('cshdots');crystalChime();break;
+    case 6:mkLeaves('lfCon');break;
+    case 7:mkStars('stars7');break;
+    case 8:setTimeout(()=>{crystalCrack();shake();drawCracks();},900);break;
+    case 9:mkTears('tearCon');heartbeat();break;
+    case 10:mkPageStorm('pstCon');windSound();fadeCarlotta();break;
+    case 11:mkFloatPages('fpCon11');mkFlyTears();break;
+    case 12:mkFloatPages('fpCon12');mkRosePetals('rptls');break;
+  }
+}
+
+// ══ SHOW SCENE ══
+function showScene(n){
+  document.querySelectorAll('.scene').forEach(s=>{
+    s.style.opacity='0';
+    setTimeout(()=>{if(!s.classList.contains('active'))s.style.display='none';},900);
+    s.classList.remove('active','visible');
+  });
+  const sc=document.getElementById('s'+n);if(!sc)return;
+  sc.style.display='flex';sc.style.flexDirection='column';sc.style.alignItems='center';
+  // FIX #4: epilogue always scrollable
+  if(n===12){sc.style.justifyContent='flex-start';sc.style.overflowY='auto';}
+  else if(!isMobile){sc.style.justifyContent='center';sc.style.overflowY='hidden';}
+  sc.classList.add('active');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{sc.style.opacity='1';sc.classList.add('visible');}));
+  document.getElementById('prog').style.width=(n/TOTAL*100)+'%';
+  const last=n>=TOTAL;
+  document.getElementById('nextBtn').style.display=last?'none':'flex';
+  document.getElementById('hint').style.display=last?'none':'block';
+  requestAnimationFrame(()=>{sc.scrollTop=0;});
+  initScene(n);
+}
+
+function advance(){if(cur<TOTAL){pageTurn();cur++;showScene(cur);}}
+
+// FIX #7: full reset including bb10 fade state
+function restart(){
+  if(fadeTimer){clearTimeout(fadeTimer);fadeTimer=null;}
+  const bb=document.getElementById('bb10');
+  if(bb){bb.style.transition='none';bb.style.opacity='1';bb.style.filter='none';
+    setTimeout(()=>{bb.style.transition='opacity 3.5s ease,filter 3.5s ease';},50);}
+  cur=0;if(audioCtx){audioCtx.close();audioCtx=null;}
+  showScene(0);
+}
+
+document.addEventListener('keydown',e=>{
+  if(['ArrowRight','ArrowDown',' ','Enter'].includes(e.key)){e.preventDefault();advance();}
+});
+document.addEventListener('click',e=>{
+  const skip=['nextBtn','restBtn','cbegin'];
+  if(skip.some(id=>e.target.id===id||(e.target.closest&&e.target.closest('#'+id))))return;
+  if(isMobile)return;
+  if(cur>0)advance();
+});
+
+let tx=0,ty=0;
+document.addEventListener('touchstart',e=>{tx=e.changedTouches[0].clientX;ty=e.changedTouches[0].clientY;},{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>Math.abs(dy)&&dx<-45)advance();
+},{passive:true});
+
+window.addEventListener('resize',()=>{
+  ['coverFx','crackCv'].forEach(id=>{const cv=document.getElementById(id);
+    if(cv){cv.width=window.innerWidth;cv.height=window.innerHeight;}});
+  if(cur===0)initBookRain();
+});
+
+showScene(0);
+</script>
+</body>
+</html>
